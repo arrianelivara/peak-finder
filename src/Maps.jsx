@@ -19,7 +19,7 @@ const Maps = () => {
     const { isLoaded } = useJsApiLoader({
         libraries: ['visualization'],
         id: 'google-map-script',
-        googleMapsApiKey: "AIzaSyDeSG-bltyVLy7IUhXDtIX2FiEgcCWNK4E"
+        googleMapsApiKey: {API_KEY}
     });
     const [map, setMap] = useState(null);
 
@@ -40,7 +40,7 @@ const Maps = () => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition((position) => {
                 setSelectedPlace({ lat: position.coords.latitude, lng: position.coords.longitude });
-                const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${position.coords.latitude},${position.coords.longitude}&key=AIzaSyDeSG-bltyVLy7IUhXDtIX2FiEgcCWNK4E`;
+                const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${position.coords.latitude},${position.coords.longitude}&key=${API_KEY}`;
                 fetch(geocodeUrl)
                     .then(response => response.json())
                     .then(data => {
@@ -113,7 +113,7 @@ const Maps = () => {
 
     return (
         <div style={{ height: '100vh', width: '100%' }}>
-            <APIProvider apiKey={"AIzaSyDeSG-bltyVLy7IUhXDtIX2FiEgcCWNK4E"}>
+            <APIProvider apiKey={API_KEY}>
             <div className='bg-white absolute z-10 h-full p-10 w-full md:w-[600px] drop-shadow overflow-auto'>
                 <img src={logo2} width={200}/>
                 <div className='mt-4'>
