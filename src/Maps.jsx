@@ -16,10 +16,11 @@ const Maps = () => {
     const [destination, setDestination] = useState(null);
     const [formattedAddress, setFormattedAddress] = useState(null);
     const [formattedAddress2, setFormattedAddress2] = useState(null);
+    // const [data, setData] = useState({});
     const { isLoaded } = useJsApiLoader({
         libraries: ['visualization'],
         id: 'google-map-script',
-        googleMapsApiKey: {API_KEY}
+        googleMapsApiKey: import.meta.env.VITE_API_KEY
     });
     const [map, setMap] = useState(null);
 
@@ -35,12 +36,29 @@ const Maps = () => {
         setIsModalOpen(false);
       };
 
+    // useEffect(() => {
+    //     if (navigator.geolocation) {
+    //         navigator.geolocation.getCurrentPosition((position) => {
+    //             fetch(`http://localhost:8000/heatmap?lat=${position.coords.latitude}&long=${position.coords.longitude}`)
+    //                 .then(response => response.json())
+    //                 .then(data => {
+    //                     if (data.status === 'OK') {
+    //                         setData(data);
+    //                     }
+    //                 })
+    //                 .catch(error => {
+    //                     console.error('Error:', error);
+    //             });
+    //         }, null, { enableHighAccuracy: true });
+    //     }
+    // });
+
     // Use directions service
     useEffect(() => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition((position) => {
                 setSelectedPlace({ lat: position.coords.latitude, lng: position.coords.longitude });
-                const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${position.coords.latitude},${position.coords.longitude}&key=${API_KEY}`;
+                const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${position.coords.latitude},${position.coords.longitude}&key=${ import.meta.env.VITE_API_KEY}`;
                 fetch(geocodeUrl)
                     .then(response => response.json())
                     .then(data => {
@@ -113,7 +131,7 @@ const Maps = () => {
 
     return (
         <div style={{ height: '100vh', width: '100%' }}>
-            <APIProvider apiKey={API_KEY}>
+            <APIProvider apiKey={import.meta.env.VITE_API_KEY}>
             <div className='bg-white absolute z-10 h-full p-10 w-full md:w-[600px] drop-shadow overflow-auto'>
                 <img src={logo2} width={200}/>
                 <div className='mt-4'>
