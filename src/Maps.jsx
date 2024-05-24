@@ -36,22 +36,22 @@ const Maps = () => {
         setIsModalOpen(false);
       };
 
-    // useEffect(() => {
-    //     if (navigator.geolocation) {
-    //         navigator.geolocation.getCurrentPosition((position) => {
-    //             fetch(`http://localhost:8000/heatmap?lat=${position.coords.latitude}&long=${position.coords.longitude}`)
-    //                 .then(response => response.json())
-    //                 .then(data => {
-    //                     if (data.status === 'OK') {
-    //                         setData(data);
-    //                     }
-    //                 })
-    //                 .catch(error => {
-    //                     console.error('Error:', error);
-    //             });
-    //         }, null, { enableHighAccuracy: true });
-    //     }
-    // });
+    useEffect(() => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((position) => {
+                fetch(`http://localhost:8000/heatmap?lat=${position.coords.latitude}&long=${position.coords.longitude}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'OK') {
+                            setData(data);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                });
+            }, null, { enableHighAccuracy: true });
+        }
+    });
 
     // Use directions service
     useEffect(() => {
@@ -136,29 +136,32 @@ const Maps = () => {
                 <img src={logo2} width={200}/>
                 <div className='mt-4'>
                     <text className='font-semibold'>Check your location:</text>
-                    <AutoCompleteSearch onPlaceSelect={setSelectedPlace} selectedPlace={formattedAddress} />
+                    <AutoCompleteSearch onPlaceSelect={setSelectedPlace} selectedPlace={formattedAddress} setFormattedAddress={setFormattedAddress}/>
                 </div>
-                <text className='font-semibold'>In-demand Booking Locations:</text>
+                <div className='flex justify-between items-center'>
+                    <text className='font-semibold'>In-demand Booking Locations:</text>
+                    <button className='border border-solid  border-gray-200'>Refresh</button>
+                </div>
                 <Tabs defaultActiveKey="1" items={[
                     {
                         key: '1',
-                        label: 'Near You',
+                        label: 'Trending',
                         children: Object.keys(current).map(city =>
                                 current[city].map(location => (
-                                    <div key={`${city}-${location.latitude}-${location.longitude}`} className={`${location.estimate_location === formattedAddress2 ? "bg-yellow-50" : ''} my-2 flex gap-2 items-start border-solid border-2 border-gray-200 px-6 py-4 rounded-lg hover:border-yellow-200 hover:bg-yellow-50`}>
+                                    <div key={`${city}-${location.latitude}-${location.longitude}`} className={`${`${location.estimate_location} ${location.locality}` === formattedAddress2 ? "bg-yellow-50" : ''} my-2 flex gap-2 items-start border-solid border-2 border-gray-200 px-6 py-4 rounded-lg hover:border-yellow-200 hover:bg-yellow-50`}>
                                         <div className='flex justify-between gap-4 w-full'>
                                             <div className='flex flex-col' onClick={() => {
-                                                if (location.estimate_location === formattedAddress2) {
+                                                if (`${location.estimate_location} ${location.locality}` === formattedAddress2) {
                                                     setFormattedAddress2(null);
                                                     setDestination(null);
                                                     return;
                                                 }
-                                                setFormattedAddress2(location.estimate_location);
+                                                setFormattedAddress2(`${location.estimate_location} ${location.locality}`);
                                                 setDestination({ lat: location.latitude, lng: location.longitude });
                                             }}>
                                                 <div className='font-semibold text-lg'>{location.locality}</div>
                                                 <div className='italic'>{`near ${location.estimate_location}`}</div>
-                                                <div className={location.pax_count > 10 ? 'text-red-500 font-semibold' : ''}>{`${location.pax_count} ${location.pax_count === 1 ? 'person' : 'people'} currently looking for a biker`}</div>
+                                                <div className={location.pax_count > 10 ? 'text-red-500 font-semibold' : ''}>{`Approximately ${location.pax_count} ${location.pax_count === 1 ? 'person is' : 'people are'} currently looking for a biker.`}</div>
                                                 <div>{`Distance from you: ${location.distance.toPrecision(3)} km`}</div>
                                             </div>
                                             <div className='hover:opacity-50' onClick={() => {
@@ -173,13 +176,13 @@ const Maps = () => {
                     },
                     {
                         key: '2',
-                        label: 'General',
+                        label: 'Forecast',
                         children: Object.keys(predict).map(city =>
                             predict[city].map(location => (
-                                <div key={`${city}-${location.latitude}-${location.longitude}`} className={`${location.estimate_location === formattedAddress2 ? "bg-yellow-50" : ''} my-2 flex gap-2 items-start border-solid border-2 border-gray-200 px-6 py-4 rounded-lg hover:border-yellow-200 hover:bg-yellow-50`}>
+                                <div key={`${city}-${location.latitude}-${location.longitude}`} className={`${`${location.estimate_location} ${location.locality}` === formattedAddress2 ? "bg-yellow-50" : ''} my-2 flex gap-2 items-start border-solid border-2 border-gray-200 px-6 py-4 rounded-lg hover:border-yellow-200 hover:bg-yellow-50`}>
                                     <div className='flex justify-between gap-4 w-full'>
                                         <div className='flex flex-col' onClick={() => {
-                                            if (location.estimate_location === formattedAddress2) {
+                                            if (`${location.estimate_location} ${location.locality}` === formattedAddress2) {
                                                 setFormattedAddress2(null);
                                                 setDestination(null);
                                                 return;
@@ -189,7 +192,7 @@ const Maps = () => {
                                         }}>
                                             <div className='font-semibold text-lg'>{location.locality}</div>
                                             <div className='italic'>{`near ${location.estimate_location}`}</div>
-                                            <div className={location.pax_count > 10 ? 'text-red-500' : ''}>{`${location.pax_count} ${location.pax_count === 1 ? 'person' : 'people'} currently looking for a biker`}</div>
+                                            <div className={location.pax_count > 10 ? 'text-red-500' : ''}>{`Approximately ${location.pax_count} ${location.pax_count === 1 ? 'person' : 'people'} will possibly look for a biker.`}</div>
                                             <div>{`Distance from you: ${location.distance.toPrecision(2)} km`}</div>
                                         </div>
                                         <div className='hover:opacity-50' onClick={() => {
@@ -247,6 +250,7 @@ const Maps = () => {
 }
 
 const Directions = ({ origin, destination }) => {
+    console.log(origin)
     const map = useMap();
     const routesLibrary = useMapsLibrary('routes');
     const [directionsService, setDirectionsService] = useState();
