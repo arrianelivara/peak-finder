@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { GoogleMap, HeatmapLayerF, useJsApiLoader, MarkerF } from '@react-google-maps/api';
 import { AutoCompleteSearch } from './AutoCompleteSearch';
 import { APIProvider, useMapsLibrary, useMap, Map } from '@vis.gl/react-google-maps';
-import { data } from './assets/data';
+import { data as TestData } from './assets/data';
 import logo2 from './assets/logo2.png';
 import externalLink from './assets/external-link.svg';
 import loading from './assets/4foo.gif';
@@ -16,7 +16,7 @@ const Maps = () => {
     const [destination, setDestination] = useState(null);
     const [formattedAddress, setFormattedAddress] = useState(null);
     const [formattedAddress2, setFormattedAddress2] = useState(null);
-    // const [data, setData] = useState({});
+    const [data, setData] = useState(TestData);
     const { isLoaded } = useJsApiLoader({
         libraries: ['visualization'],
         id: 'google-map-script',
@@ -42,9 +42,7 @@ const Maps = () => {
                 fetch(`http://localhost:8000/heatmap?lat=${position.coords.latitude}&long=${position.coords.longitude}`)
                     .then(response => response.json())
                     .then(data => {
-                        if (data.status === 'OK') {
-                            setData(data);
-                        }
+                        setData(data);
                     })
                     .catch(error => {
                         console.error('Error:', error);
@@ -80,16 +78,18 @@ const Maps = () => {
             <img src={loading} width={800} height="200px"/>
         </div>
     }
+    
     const heatMap = () => {
         const latLngArray = [];
-        Object.keys(data).forEach(category => {
-            Object.keys(data[category]).forEach(city => {
-                data[category][city].forEach(location => {
-                    latLngArray.push(new google.maps.LatLng({ location: new google.maps.LatLng(location.latitude, location.longitude), weight: location.pax_count }));
+        if (Object.keys(data).length > 1) {
+            Object.keys(data).forEach(category => {
+                Object.keys(data[category]).forEach(city => {
+                    data[category][city].forEach(location => {
+                        latLngArray.push(new google.maps.LatLng({ location: new google.maps.LatLng(location.latitude, location.longitude), weight: location.pax_count }));
+                    });
                 });
             });
-        });
-    
+        }
         return latLngArray;
     };
 
@@ -107,28 +107,29 @@ const Maps = () => {
 
     const preprocessData = (data) => {
         const sortedData = {};
-        Object.keys(data).forEach(category => {
-            sortedData[category] = {};
-    
-            // Create an array of cities with their first child's distance
-            const citiesWithDistance = Object.keys(data[category]).map(city => ({
-                city,
-                distance: data[category][city][0].distance
-            }));
-    
-            // Sort the array of cities based on the distance of their first child
-            citiesWithDistance.sort((a, b) => a.distance - b.distance);
-    
-            // Reconstruct the sorted data object
-            citiesWithDistance.forEach(({ city }) => {
-                sortedData[category][city] = data[category][city];
+        if (Object.keys(data).length > 1) {
+            Object.keys(data).forEach(category => {
+                sortedData[category] = {};
+        
+                // Create an array of cities with their first child's distance
+                const citiesWithDistance = Object.keys(data[category]).map(city => ({
+                    city,
+                    distance: data[category][city][0].distance
+                }));
+        
+                // Sort the array of cities based on the distance of their first child
+                citiesWithDistance.sort((a, b) => a.distance - b.distance);
+        
+                // Reconstruct the sorted data object
+                citiesWithDistance.forEach(({ city }) => {
+                    sortedData[category][city] = data[category][city];
+                });
             });
-        });
+        } 
         return sortedData;
     };
-
-    const { current, predict } = preprocessData(data);
-
+    const sortedData = preprocessData(data);
+    console.log("current",sortedData);
     return (
         <div style={{ height: '100vh', width: '100%' }}>
             <APIProvider apiKey={import.meta.env.VITE_API_KEY}>
@@ -146,8 +147,8 @@ const Maps = () => {
                     {
                         key: '1',
                         label: 'Trending',
-                        children: Object.keys(current).map(city =>
-                                current[city].map(location => (
+                        children: Object.keys(sortedData?.current).length > 1 ? Object.keys(sortedData?.current).map(city =>
+                            sortedData?.current[city].map(location => (
                                     <div key={`${city}-${location.latitude}-${location.longitude}`} className={`${`${location.estimate_location} ${location.locality}` === formattedAddress2 ? "bg-yellow-50" : ''} my-2 flex gap-2 items-start border-solid border-2 border-gray-200 px-6 py-4 rounded-lg hover:border-yellow-200 hover:bg-yellow-50`}>
                                         <div className='flex justify-between gap-4 w-full'>
                                             <div className='flex flex-col' onClick={() => {
@@ -172,13 +173,13 @@ const Maps = () => {
                                         </div> 
                                     </div>
                                 ))
-                            )
+                            ) : 'No data available.'
                     },
                     {
                         key: '2',
                         label: 'Forecast',
-                        children: Object.keys(predict).map(city =>
-                            predict[city].map(location => (
+                        children: sortedData?.predict && Object.keys(sortedData?.predict)?.length > 1 ? Object.keys(sortedData?.predict).map(city =>
+                            sortedData?.predict[city].map(location => (
                                 <div key={`${city}-${location.latitude}-${location.longitude}`} className={`${`${location.estimate_location} ${location.locality}` === formattedAddress2 ? "bg-yellow-50" : ''} my-2 flex gap-2 items-start border-solid border-2 border-gray-200 px-6 py-4 rounded-lg hover:border-yellow-200 hover:bg-yellow-50`}>
                                     <div className='flex justify-between gap-4 w-full'>
                                         <div className='flex flex-col' onClick={() => {
@@ -187,7 +188,7 @@ const Maps = () => {
                                                 setDestination(null);
                                                 return;
                                             }
-                                            setFormattedAddress2(location.estimate_location);
+                                            setFormattedAddress2(`${location.estimate_location} ${location.locality}`);
                                             setDestination({ lat: location.latitude, lng: location.longitude });
                                         }}>
                                             <div className='font-semibold text-lg'>{location.locality}</div>
@@ -203,7 +204,7 @@ const Maps = () => {
                                     </div> 
                                 </div>
                             ))
-                        )
+                        ) : 'No data available.'
                     },
                 ]} />
             </div>
