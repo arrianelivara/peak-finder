@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { GoogleMap, HeatmapLayerF, useJsApiLoader, MarkerF } from '@react-google-maps/api';
 import { AutoCompleteSearch } from './AutoCompleteSearch';
 import { APIProvider, useMapsLibrary, useMap, Map } from '@vis.gl/react-google-maps';
@@ -129,7 +129,18 @@ const Maps = () => {
         return sortedData;
     };
     const sortedData = preprocessData(data);
-    console.log("current",sortedData);
+
+    const fetchData = (lat, lng) => {
+        fetch(`http://localhost:8000/heatmap?lat=${lat}&long=${lng}`)
+            .then(response => response.json())
+            .then(data => {
+                setData(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+        });
+    };
+
     return (
         <div style={{ height: '100vh', width: '100%' }}>
             <APIProvider apiKey={import.meta.env.VITE_API_KEY}>
@@ -137,7 +148,7 @@ const Maps = () => {
                 <img src={logo2} width={200}/>
                 <div className='mt-4'>
                     <text className='font-semibold'>Check your location:</text>
-                    <AutoCompleteSearch onPlaceSelect={setSelectedPlace} selectedPlace={formattedAddress} setFormattedAddress={setFormattedAddress}/>
+                    <AutoCompleteSearch fetchData={fetchData} onPlaceSelect={setSelectedPlace} selectedPlace={formattedAddress} setFormattedAddress={setFormattedAddress}/>
                 </div>
                 <div className='flex justify-between items-center'>
                     <text className='font-semibold'>In-demand Booking Locations:</text>
@@ -193,7 +204,7 @@ const Maps = () => {
                                         }}>
                                             <div className='font-semibold text-lg'>{location.locality}</div>
                                             <div className='italic'>{`near ${location.estimate_location}`}</div>
-                                            <div className={location.pax_count > 10 ? 'text-red-500' : ''}>{`Approximately ${location.pax_count} ${location.pax_count === 1 ? 'person' : 'people'} will possibly look for a biker.`}</div>
+                                            <div className={location.pax_count > 10 ? 'text-red-500 font-semibold' : ''}>{`Approximately ${location.pax_count} ${location.pax_count === 1 ? 'person' : 'people'} will possibly look for a biker.`}</div>
                                             <div>{`Distance from you: ${location.distance.toPrecision(2)} km`}</div>
                                         </div>
                                         <div className='hover:opacity-50' onClick={() => {
@@ -251,7 +262,6 @@ const Maps = () => {
 }
 
 const Directions = ({ origin, destination }) => {
-    console.log(origin)
     const map = useMap();
     const routesLibrary = useMapsLibrary('routes');
     const [directionsService, setDirectionsService] = useState();
