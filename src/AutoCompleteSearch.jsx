@@ -1,7 +1,7 @@
 import React, {useRef, useEffect, useState} from 'react';
 import { useMapsLibrary } from '@vis.gl/react-google-maps';
 
-export const AutoCompleteSearch = ({ onPlaceSelect, selectedPlace, setFormattedAddress }) => {
+export const AutoCompleteSearch = ({ onPlaceSelect, selectedPlace, setFormattedAddres, fetchData }) => {
   const [placeAutocomplete, setPlaceAutocomplete] = useState(null);
   const inputRef = useRef(null);
   const places = useMapsLibrary('places');
@@ -23,8 +23,8 @@ export const AutoCompleteSearch = ({ onPlaceSelect, selectedPlace, setFormattedA
       const place = placeAutocomplete.getPlace();
       const lat = place.geometry.location.lat();
       const lng = place.geometry.location.lng();
+      fetchData(lat, lng);
       onPlaceSelect({ lat, lng });
-
       const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${ import.meta.env.VITE_API_KEY}`;
       fetch(geocodeUrl)
             .then(response => response.json())
@@ -39,7 +39,6 @@ export const AutoCompleteSearch = ({ onPlaceSelect, selectedPlace, setFormattedA
                 console.error('Error:', error);
         });
     });
-
   }, [onPlaceSelect, placeAutocomplete]);
 
   return (
